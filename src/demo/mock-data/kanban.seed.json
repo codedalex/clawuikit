@@ -1,0 +1,31 @@
+{
+  "columns": [
+    { "id": "col-todo", "title": "To Do", "order": 0 },
+    { "id": "col-progress", "title": "In Progress", "order": 1 },
+    { "id": "col-done", "title": "Done", "order": 2 }
+  ],
+  "cards": [
+    {
+      "id": "card-1",
+      "title": "Set up project scaffold",
+      "description": "Initialize the repo with Next.js and Tailwind",
+      "columnId": "col-done",
+      "order": 0
+    },
+    {
+      "id": "card-2",
+      "title": "Design the data model",
+      "description": "Define types for kanban state",
+      "columnId": "col-todo",
+      "order": 1
+    },
+    {
+      "id": "card-3",
+      "title": "Connect to OpenClaw",
+      "description": "Wire up the clawg-ui endpoint",
+      "columnId": "col-progress",
+      "order": 0
+    }
+  ],
+  "nextId": 4
+}
