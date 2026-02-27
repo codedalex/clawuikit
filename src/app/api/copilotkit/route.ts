@@ -14,13 +14,7 @@ import {
 const config = getBridgeConfig();
 
 function buildAgents(cfg: BridgeConfig) {
-  const agents: Record<string, unknown> = {};
-
-  if (cfg.mode === "standalone" || cfg.mode === "hybrid") {
-    agents.default = {
-      model: `openai/${cfg.model}`,
-    };
-  }
+  const agents: Record<string, HttpAgent> = {};
 
   if (cfg.mode === "openclaw" || cfg.mode === "hybrid") {
     const headers: Record<string, string> = {};
@@ -33,10 +27,13 @@ function buildAgents(cfg: BridgeConfig) {
       ...(Object.keys(headers).length > 0 ? { headers } : {}),
     });
 
+    // openclaw: HttpAgent IS the default (only agent)
+    // hybrid: HttpAgent is "clawpilot"; default LLM handled by serviceAdapter
     const key = cfg.mode === "openclaw" ? "default" : "clawpilot";
     agents[key] = httpAgent;
   }
 
+  // standalone: no agents -- serviceAdapter (OpenAIAdapter) handles everything
   return agents;
 }
 
