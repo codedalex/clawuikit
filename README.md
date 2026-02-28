@@ -63,47 +63,34 @@ OPENCLAW_AGENT_TOKEN=your-token
 
 ```mermaid
 flowchart LR
-    DEV["🧑‍💻 Developer"]
-    EU["👤 End User<br/>(Browser)"]
+    EU["👤 Browser<br/>User"]
     WAU["📱 WhatsApp<br/>User"]
 
-    subgraph system["  ClawUI Starter Kit  "]
+    subgraph system["  Your ClawUI App  "]
         direction TB
-
-        UC1(["Setup & Configure"])
-        UC2(["Register AI Tools"])
-        UC3(["Expose App State"])
-        UC4(["Switch Modes"])
-
-        UC5(["Chat with @copilot"])
-        UC6(["Chat with @clawpilot"])
-        UC7(["@mention Agent Selection"])
-        UC8(["Manage Board"])
-        UC9(["View Tool Execution"])
-
-        UC10(["Multi-Channel Commands"])
+        UC1(["Chat with @copilot"])
+        UC2(["Chat with @clawpilot"])
+        UC3(["Switch agents via @mention"])
+        UC4(["Manage board via drag-and-drop"])
+        UC5(["View tool execution live"])
+        UC6(["Send commands remotely"])
+        UC7(["Query app state remotely"])
     end
 
     LLM["🤖 LLM Provider<br/>(OpenAI, Anthropic)"]
     OC["🔗 OpenClaw Gateway<br/>(clawg-ui)"]
 
-    DEV --- UC1
-    DEV --- UC2
-    DEV --- UC3
-    DEV --- UC4
+    EU --- UC1 & UC2 & UC3 & UC4 & UC5
 
-    EU --- UC5
-    EU --- UC6
-    EU --- UC7
-    EU --- UC8
-    EU --- UC9
+    WAU --- UC6 & UC7
 
-    WAU --- UC10
-
-    UC5 --- LLM
+    UC1 --- LLM
+    UC2 --- OC
     UC6 --- OC
-    UC10 --- OC
+    UC7 --- OC
 ```
+
+Both channels read and write the same app data through your API routes.
 
 ### By Mode
 
@@ -111,21 +98,11 @@ flowchart LR
 |----------|:----------:|:--------:|:------:|
 | Chat with @copilot (local LLM) | ✅ | — | ✅ |
 | Chat with @clawpilot (OpenClaw) | — | ✅ | ✅ |
-| @mention agent selection | — | — | ✅ |
+| @mention agent switching | — | — | ✅ |
 | AI executes registered tools | ✅ | ✅ | ✅ |
 | Multi-channel access (WhatsApp) | — | ✅ | ✅ |
 | Manage board (drag-and-drop) | ✅ | ✅ | ✅ |
 | View tool execution status | ✅ | ✅ | ✅ |
-
-### Actors
-
-| Actor | Description |
-|-------|-------------|
-| **Developer** | Clones the kit, registers AI tools, exposes state, builds custom UI |
-| **End User** | Interacts with the app via browser — chats with agents, manages the board |
-| **WhatsApp User** | Sends commands and receives responses through OpenClaw's WhatsApp channel |
-| **LLM Provider** | OpenAI, Anthropic, Groq — powers the @copilot agent |
-| **OpenClaw Gateway** | Routes messages via clawg-ui plugin (AG-UI protocol) for @clawpilot |
 
 ---
 
@@ -145,28 +122,34 @@ src/
 └── demo/          Kanban demo (delete to start fresh)
 ```
 
-## Building Your Own App
+---
 
-1. **Delete the demo**: `rm -rf src/demo/ src/app/api/kanban/`
-2. **Create your UI** anywhere in `src/`
-3. **Register tools** with `useCopilotAction`
-4. **Expose state** with `useCopilotReadable`
-5. **Import your component** in `src/app/page.tsx`
+## Customization
 
-See `docs/engineering/2_REMOVING_DEMO.md` for detailed instructions.
+### Getting Started
 
-## Adding AI Tools
+| Step | Action | How |
+|:----:|--------|-----|
+| 1 | **Remove the demo** | `rm -rf src/demo/ src/app/api/kanban/` — app falls back to WelcomePage |
+| 2 | **Pick a mode** | Set `CLAWPILOT_MODE` in `.env` — `standalone`, `openclaw`, or `hybrid` |
+| 3 | **Configure your LLM** | Set `OPENAI_API_KEY` in `.env` (or swap adapter in `src/app/api/copilotkit/route.ts`) |
+| 4 | **Connect OpenClaw** *(optional)* | Set `OPENCLAW_AGENT_URL` + `OPENCLAW_AGENT_TOKEN`, then pair device — see [`PAIRING-CLAWG-UI.md`](./PAIRING-CLAWG-UI.md) |
+| 5 | **Build your UI** | Create components anywhere in `src/`, import in `src/app/page.tsx` |
+| 6 | **Register AI tools** | `useCopilotAction()` in your component — both agents can call them |
+| 7 | **Expose app state** | `useCopilotReadable()` in your component — both agents can read it |
+
+See `docs/engineering/2_REMOVING_DEMO.md` for a detailed walkthrough.
+
+### Registering Tools & State
 
 ```tsx
 import { useCopilotAction, useCopilotReadable } from "@copilotkit/react-core";
 
-// Expose state to the AI
 useCopilotReadable({
   description: "Current items in the shopping cart",
   value: cartItems,
 });
 
-// Register a tool the AI can call
 useCopilotAction({
   name: "addToCart",
   description: "Add a product to the shopping cart",
@@ -181,7 +164,24 @@ useCopilotAction({
 });
 ```
 
-Both agents (in hybrid mode) automatically see your tools and state.
+Tools register on mount and deregister on unmount. Both agents (in hybrid mode) automatically see your tools and state.
+
+### Swapping the LLM Provider
+
+Edit `src/app/api/copilotkit/route.ts`:
+
+```typescript
+import { OpenAIAdapter } from "@copilotkit/runtime";
+const serviceAdapter = new OpenAIAdapter({ model: "gpt-4o" });
+
+// Or Anthropic:
+import { AnthropicAdapter } from "@copilotkit/runtime";
+const serviceAdapter = new AnthropicAdapter({ model: "claude-3-opus-20240229" });
+
+// Or Groq:
+import { GroqAdapter } from "@copilotkit/runtime";
+const serviceAdapter = new GroqAdapter({ model: "llama3-70b-8192" });
+```
 
 ## Documentation
 
