@@ -2,6 +2,8 @@
 
 A starter kit for building AI-powered applications with [CopilotKit](https://copilotkit.ai) and optional [OpenClaw](https://openclaw.ai) integration.
 
+![ClawUI Demo](./clawuikit-demo.gif)
+
 ## Quickstart
 
 ```bash
