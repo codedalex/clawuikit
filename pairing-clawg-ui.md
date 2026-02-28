@@ -23,6 +23,27 @@ Every cloned/forked app should pair as its own device.
 
 ---
 
+## Step 1) Install `clawg-ui` plugin (if not already installed)
+
+If `clawg-ui` is not installed on your gateway host yet:
+
+```bash
+# From this repo root:
+cp -r ./clawgui/clawg-ui ~/.openclaw/extensions/clawg-ui
+cd ~/.openclaw/extensions/clawg-ui && npm install
+openclaw gateway restart
+```
+
+Verify plugin is loaded:
+
+```bash
+openclaw plugins list
+```
+
+You should see a loaded `clawg-ui` entry.
+
+---
+
 ## Prerequisites
 
 - OpenClaw gateway is running on the machine you’re targeting
@@ -37,7 +58,7 @@ openclaw gateway status
 
 ---
 
-## Step 1) Request pairing token
+## Step 2) Request pairing token
 
 From your app repo:
 
@@ -61,9 +82,9 @@ Expected response: `403 pairing_pending` with JSON containing:
 You only get the token from the original `pair` HTTP response (`error.pairing.token`).
 Save it immediately.
 
-If you lost it, run Step 1 again to generate a new token/code pair.
+If you lost it, run Step 2 again to generate a new token/code pair.
 
-## Step 2) Approve pairing on gateway host
+## Step 3) Approve pairing on gateway host
 
 Run on the machine that owns the OpenClaw gateway:
 
@@ -85,7 +106,7 @@ openclaw pairing list clawg-ui
 
 ---
 
-## Step 3) Update `.env`
+## Step 4) Update `.env`
 
 Set these values in your project:
 
@@ -100,7 +121,7 @@ OPENCLAW_AGENT_TOKEN=<PAIRED_DEVICE_TOKEN>
 
 ---
 
-## Step 4) Restart app
+## Step 5) Restart app
 
 ```bash
 npm run dev
@@ -110,7 +131,7 @@ npm run dev
 
 ---
 
-## Step 5) Verify token works
+## Step 6) Verify token works
 
 ```bash
 curl -i http://127.0.0.1:18789/v1/clawg-ui \
