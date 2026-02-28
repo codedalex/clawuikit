@@ -4,9 +4,12 @@ import { useKanban } from "./hooks/useKanban";
 import { useKanbanTools } from "./hooks/useKanbanTools";
 import { useKanbanReadable } from "./hooks/useKanbanReadable";
 import { KanbanBoard } from "./components/organisms/KanbanBoard";
+import { useVoiceBridge } from "./hooks/useVoiceBridge";
+import { VapiAssistant } from "@/core/components/VapiAssistant";
 
 export default function KanbanDemo() {
   const { state, actions, highlightedCardId, loading } = useKanban();
+  const { isCalling, toggleCall } = useVoiceBridge(state, actions);
 
   useKanbanTools(actions, state);
   useKanbanReadable(state);
@@ -20,10 +23,13 @@ export default function KanbanDemo() {
   }
 
   return (
-    <KanbanBoard
-      state={state}
-      actions={actions}
-      highlightedCardId={highlightedCardId}
-    />
+    <>
+      <KanbanBoard
+        state={state}
+        actions={actions}
+        highlightedCardId={highlightedCardId}
+      />
+      <VapiAssistant isCalling={isCalling} toggleCall={toggleCall} />
+    </>
   );
 }

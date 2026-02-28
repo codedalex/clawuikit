@@ -3,7 +3,6 @@ import localFont from "next/font/local";
 import "./globals.css";
 import "@copilotkit/react-ui/styles.css";
 import { ClawUIProvider } from "@/core/providers/ClawUIProvider";
-import { VapiAssistant } from "@/core/components/VapiAssistant";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -33,7 +32,6 @@ export default function RootLayout({
       >
         <ClawUIProvider>
           {children}
-          <VapiAssistant />
         </ClawUIProvider>
       </body>
     </html>

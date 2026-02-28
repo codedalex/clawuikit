@@ -48,12 +48,12 @@ export function KanbanCard({
       style={style}
       {...attributes}
       {...listeners}
-      className={`group rounded-lg border bg-background p-3 shadow-sm transition-all cursor-grab active:cursor-grabbing ${
-        isDragging ? "opacity-50 shadow-lg" : ""
+      className={`group relative rounded-xl border border-white/10 bg-white/5 p-4 shadow-sm transition-all cursor-grab active:cursor-grabbing hover:bg-white/[0.08] hover:border-white/20 hover:shadow-lg hover:-translate-y-0.5 ${
+        isDragging ? "opacity-30 scale-95" : ""
       } ${
         highlighted
-          ? "animate-pulse-highlight border-amber-500/40"
-          : "border-foreground/10 hover:border-foreground/20"
+          ? "ring-2 ring-indigo-500/50 bg-indigo-500/10 border-indigo-500/30 animate-pulse-glow"
+          : ""
       }`}
     >
       {editing ? (
@@ -63,44 +63,44 @@ export function KanbanCard({
           onBlur={handleSave}
           onKeyDown={(e) => e.key === "Enter" && handleSave()}
           autoFocus
-          className="w-full bg-transparent text-sm font-medium outline-none"
+          className="w-full bg-transparent text-sm font-semibold text-white outline-none"
         />
       ) : (
-        <div className="flex items-start justify-between gap-2">
-          <p
-            className="text-sm font-medium cursor-text"
-            onDoubleClick={() => setEditing(true)}
-          >
-            {card.title}
-          </p>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1">
+            <h3
+              className="text-sm font-semibold text-white/90 leading-snug cursor-text line-clamp-2"
+              onDoubleClick={() => setEditing(true)}
+            >
+              {card.title}
+            </h3>
+            {card.description && (
+              <p className="mt-1.5 text-xs text-white/40 line-clamp-3 leading-relaxed">
+                {card.description}
+              </p>
+            )}
+          </div>
           <button
             onClick={(e) => {
               e.stopPropagation();
               onDelete();
             }}
-            className="shrink-0 opacity-0 group-hover:opacity-100 text-foreground/30 hover:text-red-500 transition-all"
+            className="shrink-0 p-1 rounded-md text-white/10 hover:text-red-400 hover:bg-red-400/10 transition-all opacity-0 group-hover:opacity-100"
           >
-            <svg
-              className="h-3.5 w-3.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 18L18 6M6 6l12 12"
-              />
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
       )}
-      {card.description && !editing && (
-        <p className="mt-1 text-xs text-foreground/40 line-clamp-2">
-          {card.description}
-        </p>
-      )}
+      <div className="mt-3 flex items-center justify-between">
+        <div className="flex gap-1.5">
+          <div className="w-2 h-2 rounded-full premium-gradient shadow-glow shadow-indigo-500/40" />
+        </div>
+        <span className="text-[9px] font-bold text-white/10 uppercase tracking-tighter">
+          #{card.id.slice(-4)}
+        </span>
+      </div>
     </div>
   );
 }
