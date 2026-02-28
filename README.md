@@ -49,7 +49,7 @@ Requires the clawg-ui plugin on your OpenClaw gateway. See `clawgui/SETUP.md`.
 
 Having auth issues (401/403) with `@clawpilot`? Follow the first-time pairing guide: [`PAIRING-CLAWG-UI.md`](./PAIRING-CLAWG-UI.md).
 
-Gateway on a VPS? See the [Remote Gateway Guide](./docs/engineering/3_REMOTE_GATEWAY.md).
+Gateway on a VPS? See the [Remote Gateway Guide](./docs/REMOTE_GATEWAY.md).
 
 ### Hybrid
 
