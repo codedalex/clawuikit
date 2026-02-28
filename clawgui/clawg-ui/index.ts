@@ -38,6 +38,9 @@ const plugin = {
       const writer = getWriter(sk);
       if (!writer) return;
 
+      const isClient = isClientTool(sk, event.toolName);
+      console.log(`[clawg-ui] before_tool_call: ${event.toolName} (client=${isClient})`);
+
       const toolCallId = `tool-${randomUUID()}`;
       writer({
         type: EventType.TOOL_CALL_START,
@@ -54,7 +57,7 @@ const plugin = {
         });
       }
 
-      if (isClientTool(sk, event.toolName)) {
+      if (isClient) {
         writer({
           type: EventType.TOOL_CALL_END,
           toolCallId,

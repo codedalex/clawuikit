@@ -9,7 +9,6 @@ import {
   setWriter,
   clearWriter,
   markClientToolNames,
-  wasClientToolCalled,
   clearClientToolCalled,
   clearClientToolNames,
   wasToolFiredInRun,
@@ -496,19 +495,23 @@ export function createAguiHttpHandler(api: OpenClawPluginApi) {
       abortController.abort();
     });
 
+    console.log(`[clawg-ui] dispatch: session=${sessionKey}, body=${fullBody.slice(0, 120)}...`);
+
     const dispatcher = {
       sendToolResult: (_payload: { text?: string }) => {
-        // Tool call events are emitted by before/after_tool_call hooks
+        console.log(`[clawg-ui] sendToolResult called`);
         return !closed;
       },
       sendBlockReply: (payload: { text?: string }) => {
-        if (closed || wasClientToolCalled(sessionKey)) {
+        if (closed) {
           return false;
         }
         const text = payload.text?.trim();
         if (!text) {
           return false;
         }
+
+        console.log(`[clawg-ui] sendBlockReply: ${text.length} chars, toolFired=${wasToolFiredInRun(sessionKey)}`);
 
         splitRunIfToolFired();
 
@@ -522,7 +525,6 @@ export function createAguiHttpHandler(api: OpenClawPluginApi) {
           });
         }
 
-        // Join chunks with \n\n (breakPreference: paragraph uses double-newline joiner)
         writeEvent({
           type: EventType.TEXT_MESSAGE_CONTENT,
           messageId: currentMessageId,
@@ -535,7 +537,9 @@ export function createAguiHttpHandler(api: OpenClawPluginApi) {
         if (closed) {
           return false;
         }
-        const text = wasClientToolCalled(sessionKey) ? "" : payload.text?.trim();
+        const text = payload.text?.trim();
+
+        console.log(`[clawg-ui] sendFinalReply: ${text?.length ?? 0} chars, toolFired=${wasToolFiredInRun(sessionKey)}`);
 
         if (text) {
           splitRunIfToolFired();
@@ -549,7 +553,6 @@ export function createAguiHttpHandler(api: OpenClawPluginApi) {
               role: "assistant",
             });
           }
-          // Join chunks with \n\n (breakPreference: paragraph uses double-newline joiner)
           writeEvent({
             type: EventType.TEXT_MESSAGE_CONTENT,
             messageId: currentMessageId,
@@ -557,7 +560,6 @@ export function createAguiHttpHandler(api: OpenClawPluginApi) {
             delta: text + "\n\n",
           });
         }
-        // End the message and run
         if (messageStarted) {
           writeEvent({
             type: EventType.TEXT_MESSAGE_END,
@@ -613,6 +615,7 @@ export function createAguiHttpHandler(api: OpenClawPluginApi) {
         res.end();
       }
     } catch (err) {
+      console.error(`[clawg-ui] dispatch error:`, err);
       if (!closed) {
         writeEvent({
           type: EventType.RUN_ERROR,
