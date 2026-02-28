@@ -59,6 +59,76 @@ OPENCLAW_AGENT_URL=http://localhost:18789/v1/clawg-ui
 OPENCLAW_AGENT_TOKEN=your-token
 ```
 
+## Use Cases
+
+```mermaid
+flowchart LR
+    DEV["🧑‍💻 Developer"]
+    EU["👤 End User<br/>(Browser)"]
+    WAU["📱 WhatsApp<br/>User"]
+
+    subgraph system["  ClawUI Starter Kit  "]
+        direction TB
+
+        UC1(["Setup & Configure"])
+        UC2(["Register AI Tools"])
+        UC3(["Expose App State"])
+        UC4(["Switch Modes"])
+
+        UC5(["Chat with @copilot"])
+        UC6(["Chat with @clawpilot"])
+        UC7(["@mention Agent Selection"])
+        UC8(["Manage Board"])
+        UC9(["View Tool Execution"])
+
+        UC10(["Multi-Channel Commands"])
+    end
+
+    LLM["🤖 LLM Provider<br/>(OpenAI, Anthropic)"]
+    OC["🔗 OpenClaw Gateway<br/>(clawg-ui)"]
+
+    DEV --- UC1
+    DEV --- UC2
+    DEV --- UC3
+    DEV --- UC4
+
+    EU --- UC5
+    EU --- UC6
+    EU --- UC7
+    EU --- UC8
+    EU --- UC9
+
+    WAU --- UC10
+
+    UC5 --- LLM
+    UC6 --- OC
+    UC10 --- OC
+```
+
+### By Mode
+
+| Use Case | Standalone | OpenClaw | Hybrid |
+|----------|:----------:|:--------:|:------:|
+| Chat with @copilot (local LLM) | ✅ | — | ✅ |
+| Chat with @clawpilot (OpenClaw) | — | ✅ | ✅ |
+| @mention agent selection | — | — | ✅ |
+| AI executes registered tools | ✅ | ✅ | ✅ |
+| Multi-channel access (WhatsApp) | — | ✅ | ✅ |
+| Manage board (drag-and-drop) | ✅ | ✅ | ✅ |
+| View tool execution status | ✅ | ✅ | ✅ |
+
+### Actors
+
+| Actor | Description |
+|-------|-------------|
+| **Developer** | Clones the kit, registers AI tools, exposes state, builds custom UI |
+| **End User** | Interacts with the app via browser — chats with agents, manages the board |
+| **WhatsApp User** | Sends commands and receives responses through OpenClaw's WhatsApp channel |
+| **LLM Provider** | OpenAI, Anthropic, Groq — powers the @copilot agent |
+| **OpenClaw Gateway** | Routes messages via clawg-ui plugin (AG-UI protocol) for @clawpilot |
+
+---
+
 ## Project Structure
 
 ```
