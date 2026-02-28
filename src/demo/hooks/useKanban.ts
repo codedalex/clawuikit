@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   Card,
   Column,
@@ -26,6 +26,15 @@ export interface KanbanActions {
 }
 
 const EMPTY: KanbanState = { columns: [], cards: [] };
+const POLL_INTERVAL_MS = 3000;
+
+function stateFingerprint(s: KanbanState): string {
+  const cols = s.columns.map((c) => `${c.id}:${c.title}:${c.order}`).join("|");
+  const cards = s.cards
+    .map((c) => `${c.id}:${c.title}:${c.description}:${c.columnId}:${c.order}`)
+    .join("|");
+  return `${cols};;${cards}`;
+}
 
 async function api<T = unknown>(
   method: "GET" | "POST",
@@ -54,6 +63,7 @@ export function useKanban() {
   const [highlightedCardId, setHighlightedCardId] = useState<string | null>(
     null,
   );
+  const fingerprintRef = useRef("");
 
   const highlightCard = useCallback((cardId: string) => {
     setHighlightedCardId(cardId);
@@ -62,12 +72,22 @@ export function useKanban() {
 
   const fetchState = useCallback(async () => {
     const data = await api<KanbanState & { nextId?: number }>("GET");
-    setState({ columns: data.columns, cards: data.cards });
+    const next = { columns: data.columns, cards: data.cards };
+    const fp = stateFingerprint(next);
+    if (fp !== fingerprintRef.current) {
+      fingerprintRef.current = fp;
+      setState(next);
+    }
     setLoading(false);
   }, []);
 
   useEffect(() => {
     fetchState();
+  }, [fetchState]);
+
+  useEffect(() => {
+    const id = setInterval(fetchState, POLL_INTERVAL_MS);
+    return () => clearInterval(id);
   }, [fetchState]);
 
   const addCard = useCallback(
