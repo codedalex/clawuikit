@@ -47,7 +47,7 @@ OPENCLAW_AGENT_TOKEN=your-token
 
 Requires the clawg-ui plugin on your OpenClaw gateway. See `clawgui/SETUP.md`.
 
-Having auth issues (401/403) with `@clawpilot`? Follow the first-time pairing guide: [`pairing-clawg-ui.md`](./pairing-clawg-ui.md).
+Having auth issues (401/403) with `@clawpilot`? Follow the first-time pairing guide: [`PAIRING-CLAWG-UI.md`](./PAIRING-CLAWG-UI.md).
 
 ### Hybrid
 

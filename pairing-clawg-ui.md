@@ -54,6 +54,15 @@ Expected response: `403 pairing_pending` with JSON containing:
 
 ---
 
+## Important note about the token
+
+`openclaw pairing list` and `openclaw pairing approve` do **not** print the paired token.
+
+You only get the token from the original `pair` HTTP response (`error.pairing.token`).
+Save it immediately.
+
+If you lost it, run Step 1 again to generate a new token/code pair.
+
 ## Step 2) Approve pairing on gateway host
 
 Run on the machine that owns the OpenClaw gateway:
