@@ -49,6 +49,8 @@ Requires the clawg-ui plugin on your OpenClaw gateway. See `clawgui/SETUP.md`.
 
 Having auth issues (401/403) with `@clawpilot`? Follow the first-time pairing guide: [`PAIRING-CLAWG-UI.md`](./PAIRING-CLAWG-UI.md).
 
+Gateway on a VPS? See the [Remote Gateway Guide](./docs/engineering/3_REMOTE_GATEWAY.md).
+
 ### Hybrid
 
 ```env
@@ -186,5 +188,5 @@ const serviceAdapter = new GroqAdapter({ model: "llama3-70b-8192" });
 ## Documentation
 
 - `docs/product/` -- Product profile and goals
-- `docs/engineering/` -- Architecture, modes guide, demo removal
+- `docs/engineering/` -- Architecture, modes guide, demo removal, remote gateway setup
 - `docs/ai/` -- Agent configuration reference
