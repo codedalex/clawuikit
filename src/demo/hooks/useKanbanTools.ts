@@ -15,9 +15,7 @@ export function useKanbanTools(actions: KanbanActions, state: KanbanState) {
   actionsRef.current = actions;
 
   const columnSummary = () =>
-    stateRef.current.columns
-      .map((c) => `${c.title} (id: ${c.id})`)
-      .join(", ");
+    stateRef.current.columns.map((c) => `${c.title} (id: ${c.id})`).join(", ");
 
   const cardSummary = () =>
     stateRef.current.cards
@@ -141,8 +139,7 @@ export function useKanbanTools(actions: KanbanActions, state: KanbanState) {
     {
       name: "updateCard",
       description:
-        "Update a card's title or description. Current cards: " +
-        cardSummary(),
+        "Update a card's title or description. Current cards: " + cardSummary(),
       parameters: [
         {
           name: "cardId",
@@ -287,5 +284,52 @@ export function useKanbanTools(actions: KanbanActions, state: KanbanState) {
       },
     },
     [state.columns.length],
+  );
+  useCopilotAction(
+    {
+      name: "executeTask",
+      description:
+        "Start executing a specific task. Use this when the user asks you to 'work on' or 'do' a task. " +
+        "This will move the card to In Progress and set its status to 'working'.",
+      parameters: [
+        {
+          name: "cardId",
+          type: "string",
+          description: "The ID of the card to execute",
+        },
+      ],
+      handler: async ({ cardId }) => {
+        const s = stateRef.current;
+        const card = s.cards.find((c) => c.id === cardId);
+        if (!card) return `Error: card "${cardId}" not found.`;
+
+        // 1. Move to In Progress (assuming 'col-1' or finding by title)
+        const inProgressCol = s.columns.find((col) =>
+          col.title.toLowerCase().includes("progress"),
+        );
+        if (inProgressCol) {
+          actionsRef.current.moveCard(cardId, inProgressCol.id);
+        }
+
+        // 2. Set Status to Working
+        actionsRef.current.updateCard(cardId, {
+          executionStatus: "working",
+          executionLogs: [
+            `⚡ Agent starting work on: ${card.title}`,
+            "🔍 Analyzing requirements...",
+          ],
+        });
+
+        return `Starting execution of "${card.title}". I've moved it to In Progress and will update you on my progress.`;
+      },
+      render: (props: { status: string; args: Record<string, unknown> }) =>
+        createElement(ToolCallCard, {
+          agentId: lastActiveAgent,
+          toolName: "executeTask",
+          status: props.status as "inProgress" | "executing" | "complete",
+          args: props.args,
+        }),
+    },
+    [state.columns.length, state.cards.length],
   );
 }

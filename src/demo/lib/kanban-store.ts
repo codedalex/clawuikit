@@ -1,12 +1,21 @@
 import { existsSync, readFileSync, writeFileSync, copyFileSync } from "fs";
 import { join } from "path";
 
+export type ExecutionStatus =
+  | "idle"
+  | "thinking"
+  | "working"
+  | "error"
+  | "done";
+
 export interface Card {
   id: string;
   title: string;
   description: string;
   columnId: string;
   order: number;
+  executionStatus?: ExecutionStatus;
+  executionLogs?: string[];
 }
 
 export interface Column {
@@ -68,9 +77,7 @@ export function addCard(
 
   const maxOrder = Math.max(
     -1,
-    ...state.cards
-      .filter((c) => c.columnId === columnId)
-      .map((c) => c.order),
+    ...state.cards.filter((c) => c.columnId === columnId).map((c) => c.order),
   );
   const card: Card = {
     id,
@@ -84,11 +91,7 @@ export function addCard(
   return card;
 }
 
-export function moveCard(
-  cardId: string,
-  toColumnId: string,
-  toOrder?: number,
-) {
+export function moveCard(cardId: string, toColumnId: string, toOrder?: number) {
   const state = read();
   const card = state.cards.find((c) => c.id === cardId);
   if (!card) throw new Error(`Card ${cardId} not found`);
@@ -109,7 +112,9 @@ export function moveCard(
 
 export function updateCard(
   cardId: string,
-  patch: Partial<Pick<Card, "title" | "description">>,
+  patch: Partial<
+    Pick<Card, "title" | "description" | "executionStatus" | "executionLogs">
+  >,
 ) {
   const state = read();
   const card = state.cards.find((c) => c.id === cardId);
@@ -117,6 +122,13 @@ export function updateCard(
 
   if (patch.title !== undefined) card.title = patch.title;
   if (patch.description !== undefined) card.description = patch.description;
+  if (patch.executionStatus !== undefined)
+    card.executionStatus = patch.executionStatus;
+  if (patch.executionLogs !== undefined) {
+    card.executionLogs = Array.isArray(card.executionLogs)
+      ? [...card.executionLogs, ...patch.executionLogs]
+      : patch.executionLogs;
+  }
   write(state);
 }
 

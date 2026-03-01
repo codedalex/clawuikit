@@ -6,10 +6,7 @@ export async function GET() {
     const state = store.getState();
     return NextResponse.json(state);
   } catch (e) {
-    return NextResponse.json(
-      { error: (e as Error).message },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }
 }
 
@@ -31,6 +28,8 @@ type Action =
       cardId: string;
       title?: string;
       description?: string;
+      executionStatus?: store.ExecutionStatus;
+      executionLogs?: string[];
     }
   | { action: "deleteCard"; cardId: string }
   | { action: "addColumn"; title: string }
@@ -43,11 +42,7 @@ export async function POST(req: Request) {
 
     switch (body.action) {
       case "addCard": {
-        const card = store.addCard(
-          body.columnId,
-          body.title,
-          body.description,
-        );
+        const card = store.addCard(body.columnId, body.title, body.description);
         return NextResponse.json({ card });
       }
       case "moveCard": {
@@ -55,9 +50,11 @@ export async function POST(req: Request) {
         return NextResponse.json({ ok: true });
       }
       case "updateCard": {
-        const patch: Record<string, string> = {};
+        const patch: any = {};
         if (body.title) patch.title = body.title;
         if (body.description) patch.description = body.description;
+        if (body.executionStatus) patch.executionStatus = body.executionStatus;
+        if (body.executionLogs) patch.executionLogs = body.executionLogs;
         store.updateCard(body.cardId, patch);
         return NextResponse.json({ ok: true });
       }
@@ -78,15 +75,9 @@ export async function POST(req: Request) {
         return NextResponse.json({ ok: true });
       }
       default:
-        return NextResponse.json(
-          { error: "Unknown action" },
-          { status: 400 },
-        );
+        return NextResponse.json({ error: "Unknown action" }, { status: 400 });
     }
   } catch (e) {
-    return NextResponse.json(
-      { error: (e as Error).message },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }
 }

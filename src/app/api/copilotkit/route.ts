@@ -6,10 +6,7 @@ import {
 } from "@copilotkit/runtime";
 import { HttpAgent } from "@ag-ui/client";
 import { NextRequest } from "next/server";
-import {
-  getBridgeConfig,
-  type BridgeConfig,
-} from "@/core/lib/bridge-config";
+import { getBridgeConfig, type BridgeConfig } from "@/core/lib/bridge-config";
 
 const config = getBridgeConfig();
 
@@ -59,3 +56,5 @@ export const POST = async (req: NextRequest) => {
 
   return handleRequest(req);
 };
+
+export const GET = POST;

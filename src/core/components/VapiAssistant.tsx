@@ -15,7 +15,7 @@ export const VapiAssistant = ({ isCalling, toggleCall }: VapiAssistantProps) => 
         {isCalling && (
           <div className="absolute inset-0 rounded-full bg-red-500/40 animate-ping" />
         )}
-        <div className={`absolute -inset-1 rounded-full opacity-40 blur-lg transition duration-1000 group-hover:opacity-100 group-hover:duration-200 ${
+        <div className={`absolute -inset-1 rounded-full opacity-40 blur-lg transition duration-1000 group-hover:opacity-100 group-hover:duration-200 pointer-events-none ${
           isCalling ? "bg-red-500 animate-pulse-glow" : "premium-gradient"
         }`} />
         

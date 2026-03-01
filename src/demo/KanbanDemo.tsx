@@ -5,12 +5,14 @@ import { useKanbanTools } from "./hooks/useKanbanTools";
 import { useKanbanReadable } from "./hooks/useKanbanReadable";
 import { KanbanBoard } from "./components/organisms/KanbanBoard";
 import { useVoiceBridge } from "./hooks/useVoiceBridge";
+import { useKanbanAutomations } from "./hooks/useKanbanAutomations";
 import { VapiAssistant } from "@/core/components/VapiAssistant";
 
 export default function KanbanDemo() {
   const { state, actions, highlightedCardId, loading } = useKanban();
   const { isCalling, toggleCall } = useVoiceBridge(state, actions);
 
+  useKanbanAutomations(state, actions);
   useKanbanTools(actions, state);
   useKanbanReadable(state);
 

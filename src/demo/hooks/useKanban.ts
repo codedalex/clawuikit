@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   Card,
   Column,
@@ -16,7 +16,9 @@ export interface KanbanActions {
   moveCard: (cardId: string, toColumnId: string, toOrder?: number) => void;
   updateCard: (
     cardId: string,
-    patch: Partial<Pick<Card, "title" | "description">>,
+    patch: Partial<
+      Pick<Card, "title" | "description" | "executionStatus" | "executionLogs">
+    >,
   ) => void;
   deleteCard: (cardId: string) => void;
   addColumn: (title: string) => string;
@@ -153,13 +155,16 @@ export function useKanban() {
   const updateCard = useCallback(
     (
       cardId: string,
-      patch: Partial<Pick<Card, "title" | "description">>,
+      patch: Partial<
+        Pick<
+          Card,
+          "title" | "description" | "executionStatus" | "executionLogs"
+        >
+      >,
     ) => {
       setState((s) => ({
         ...s,
-        cards: s.cards.map((c) =>
-          c.id === cardId ? { ...c, ...patch } : c,
-        ),
+        cards: s.cards.map((c) => (c.id === cardId ? { ...c, ...patch } : c)),
       }));
       highlightCard(cardId);
       api("POST", { action: "updateCard", cardId, ...patch })
@@ -231,16 +236,28 @@ export function useKanban() {
     [fetchState],
   );
 
-  const actions: KanbanActions = {
-    addCard,
-    moveCard,
-    updateCard,
-    deleteCard,
-    addColumn,
-    renameColumn,
-    deleteColumn,
-    refresh: fetchState,
-  };
+  const actions: KanbanActions = useMemo(
+    () => ({
+      addCard,
+      moveCard,
+      updateCard,
+      deleteCard,
+      addColumn,
+      renameColumn,
+      deleteColumn,
+      refresh: fetchState,
+    }),
+    [
+      addCard,
+      moveCard,
+      updateCard,
+      deleteCard,
+      addColumn,
+      renameColumn,
+      deleteColumn,
+      fetchState,
+    ],
+  );
 
   return { state, actions, highlightedCardId, loading };
 }
