@@ -6,11 +6,13 @@ import { useKanbanReadable } from "./hooks/useKanbanReadable";
 import { KanbanBoard } from "./components/organisms/KanbanBoard";
 import { useVoiceBridge } from "./hooks/useVoiceBridge";
 import { useKanbanAutomations } from "./hooks/useKanbanAutomations";
-import { VapiAssistant } from "@/core/components/VapiAssistant";
+import { useCodebaseIndex } from "./hooks/useCodebaseIndex";
+import { LocalVoiceAssistant } from "@/core/components/LocalVoiceAssistant";
 
 export default function KanbanDemo() {
   const { state, actions, highlightedCardId, loading } = useKanban();
-  const { isCalling, toggleCall } = useVoiceBridge(state, actions);
+  const voice = useVoiceBridge(state, actions);
+  const index = useCodebaseIndex();
 
   useKanbanAutomations(state, actions);
   useKanbanTools(actions, state);
@@ -30,8 +32,9 @@ export default function KanbanDemo() {
         state={state}
         actions={actions}
         highlightedCardId={highlightedCardId}
+        index={index}
       />
-      <VapiAssistant isCalling={isCalling} toggleCall={toggleCall} />
+      <LocalVoiceAssistant voice={voice} />
     </>
   );
 }

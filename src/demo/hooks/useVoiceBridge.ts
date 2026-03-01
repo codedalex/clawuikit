@@ -1,197 +1,199 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import Vapi from "@vapi-ai/web";
+import { useEffect, useState, useRef, useCallback } from "react";
 import type { KanbanActions, KanbanState } from "./useKanban";
+import type { VoiceIntent } from "@/app/api/voice/route";
 
-const VAPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY || "";
+type RecordingState = "idle" | "recording" | "processing" | "result" | "error";
 
-export function useVoiceBridge(state: KanbanState, actions: KanbanActions) {
-  const [isCalling, setIsCalling] = useState(false);
-  const vapiRef = useRef<Vapi | null>(null);
+export interface VoiceBridgeResult {
+  isRecording: boolean;
+  recordingState: RecordingState;
+  transcript: string;
+  intent: VoiceIntent | null;
+  error: string | null;
+  startRecording: () => void;
+  stopRecording: () => void;
+  confirmIntent: () => void;
+  dismissResult: () => void;
+}
+
+export function useVoiceBridge(
+  state: KanbanState,
+  actions: KanbanActions,
+): VoiceBridgeResult {
+  const [recordingState, setRecordingState] = useState<RecordingState>("idle");
+  const [transcript, setTranscript] = useState("");
+  const [intent, setIntent] = useState<VoiceIntent | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
   const actionsRef = useRef(actions);
+  const stateRef = useRef(state);
 
-  // Keep actionsRef up to date
+  // Keep refs current
   useEffect(() => {
     actionsRef.current = actions;
   }, [actions]);
-
   useEffect(() => {
-    if (!VAPI_PUBLIC_KEY) {
-      console.error("NEXT_PUBLIC_VAPI_PUBLIC_KEY is missing from .env");
-      return;
-    }
+    stateRef.current = state;
+  }, [state]);
 
-    if (!vapiRef.current) {
-      console.log("Creating new Vapi instance...");
-      const vapi = new Vapi(VAPI_PUBLIC_KEY);
+  const startRecording = useCallback(async () => {
+    setError(null);
+    setTranscript("");
+    setIntent(null);
 
-      // Attach listeners immediately
-      vapi.on("call-start", () => {
-        console.log("Vapi Call Started");
-        setIsCalling(true);
-      });
-      vapi.on("call-end", () => {
-        console.log("Vapi Call Ended");
-        setIsCalling(false);
-      });
-      vapi.on("error", (error) => {
-        console.error("Vapi Error Event:", error);
-        setIsCalling(false);
-      });
-      vapi.on("message", (message: any) => {
-        console.log("Vapi Message Received:", message.type);
-        if (message.type === "tool-call") {
-          const { name, parameters } = message.toolCall;
-          console.log("Vapi tool call:", name, parameters);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : "audio/ogg;codecs=opus";
 
-          if (name === "addCard") {
-            const { columnId, title, description } = parameters;
-            actionsRef.current.addCard(columnId, title, description);
-          } else if (name === "moveCard") {
-            const { cardId, toColumnId } = parameters;
-            actionsRef.current.moveCard(cardId, toColumnId);
-          } else if (name === "deleteCard") {
-            const { cardId } = parameters;
-            actionsRef.current.deleteCard(cardId);
-          } else if (name === "executeTask") {
-            const { cardId } = parameters;
-            // The CopilotKit tool 'executeTask' does the heavy lifting, 
-            // but we'll simulate the state change here for immediate Vapi feedback.
-            const s = state; 
-            const card = s.cards.find(c => c.id === cardId);
-            const inProgressCol = s.columns.find(col => col.title.toLowerCase().includes("progress"));
-            
-            if (card && inProgressCol) {
-              actionsRef.current.moveCard(cardId, inProgressCol.id);
-              actionsRef.current.updateCard(cardId, { 
-                executionStatus: "working",
-                executionLogs: ["⚡ Voice execution triggered", "🛠️ Agent starting work..."]
-              });
-            }
-          }
-        }
-      });
+      const recorder = new MediaRecorder(stream, { mimeType });
+      chunksRef.current = [];
 
-      vapiRef.current = vapi;
-    }
-
-    return () => {
-      // In a production app, we might want to clean up listeners here,
-      // but to keep the ref stable we'll just leave it.
-    };
-  }, [actions]);
-
-  const toggleCall = () => {
-    console.log("Toggle Call Clicked. Current isCalling:", isCalling);
-
-    if (!vapiRef.current) {
-      console.error("Vapi instance NOT initialized. Ref is null.");
-      return;
-    }
-
-    if (isCalling) {
-      console.log("Stopping call...");
-      vapiRef.current.stop();
-    } else {
-      const assistantConfig: any = {
-        name: "Developer Command Center",
-        model: {
-          provider: "openai",
-          model: "gpt-4o",
-          systemPrompt: `You are a developer's second brain. You help manage a Kanban board through voice. 
-          The board has columns: ${state.columns.map((c) => `"${c.title}" (id: ${c.id})`).join(", ")}.
-          Current cards: ${state.cards.map((c) => `"${c.title}" (id: ${c.id})`).join(", ")}.
-          
-          You can add, move, or delete cards. 
-          NEW CAPABILITY: You can "execute" or "work on" a task. 
-          When someone says "Work on task X" or "Execute X", use the executeTask tool. 
-          This will move the card to In Progress and start an autonomous agent workflow.`,
-        },
-        tools: [
-          {
-            type: "function",
-            name: "addCard",
-            description: "Add a new card to the Kanban board.",
-            parameters: {
-              type: "object",
-              properties: {
-                columnId: {
-                  type: "string",
-                  description: "The ID of the column.",
-                },
-                title: {
-                  type: "string",
-                  description: "The title of the card.",
-                },
-                description: {
-                  type: "string",
-                  description: "The description of the card.",
-                },
-              },
-              required: ["columnId", "title"],
-            },
-          },
-          {
-            type: "function",
-            name: "moveCard",
-            description: "Move an existing card to another column.",
-            parameters: {
-              type: "object",
-              properties: {
-                cardId: {
-                  type: "string",
-                  description: "The ID of the card to move.",
-                },
-                toColumnId: {
-                  type: "string",
-                  description: "The ID of the target column.",
-                },
-              },
-              required: ["cardId", "toColumnId"],
-            },
-          },
-          {
-            type: "function",
-            name: "deleteCard",
-            description: "Delete a card from the board.",
-            parameters: {
-              type: "object",
-              properties: {
-                cardId: {
-                  type: "string",
-                  description: "The ID of the card to delete.",
-                },
-              },
-              required: ["cardId"],
-            },
-          },
-          {
-            type: "function",
-            name: "executeTask",
-            description: "Start executing or working on a specific task.",
-            parameters: {
-              type: "object",
-              properties: {
-                cardId: {
-                  type: "string",
-                  description: "The ID of the card to work on.",
-                },
-              },
-              required: ["cardId"],
-            },
-          },
-        ],
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
       };
 
-      console.log("Starting Vapi call with config...");
-      try {
-        vapiRef.current?.start(assistantConfig);
-      } catch (err) {
-        console.error("Vapi start failed synchronously:", err);
+      recorder.onstop = async () => {
+        // Stop mic tracks
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(chunksRef.current, { type: mimeType });
+
+        if (blob.size < 1000) {
+          setError("Recording too short. Hold and speak clearly.");
+          setRecordingState("idle");
+          return;
+        }
+
+        setRecordingState("processing");
+        await transcribeAndParse(blob);
+      };
+
+      recorder.start(100); // collect 100ms chunks
+      mediaRecorderRef.current = recorder;
+      setRecordingState("recording");
+    } catch (err) {
+      setError("Microphone access denied. Please allow mic permissions.");
+      setRecordingState("error");
+    }
+  }, []);
+
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current?.state === "recording") {
+      mediaRecorderRef.current.stop();
+    }
+  }, []);
+
+  const transcribeAndParse = async (blob: Blob) => {
+    try {
+      const form = new FormData();
+      form.append("audio", blob, "recording.webm");
+
+      const res = await fetch("/api/voice", { method: "POST", body: form });
+      if (!res.ok) throw new Error(`Voice API error: ${res.status}`);
+
+      const data = (await res.json()) as {
+        transcript: string;
+        intent: VoiceIntent | null;
+      };
+
+      if (!data.transcript) {
+        setError("Couldn't hear anything. Please try again.");
+        setRecordingState("idle");
+        return;
       }
+
+      setTranscript(data.transcript);
+      setIntent(data.intent);
+      setRecordingState("result");
+
+      // Auto-confirm if confidence is very high
+      if (
+        data.intent &&
+        data.intent.confidence >= 0.9 &&
+        data.intent.action !== "unknown"
+      ) {
+        setTimeout(() => executeIntent(data.intent!), 3000);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+      setRecordingState("error");
     }
   };
 
-  return { isCalling, toggleCall };
+  const executeIntent = useCallback((resolvedIntent: VoiceIntent) => {
+    const s = stateRef.current;
+    const a = actionsRef.current;
+    const { action, params } = resolvedIntent;
+
+    if (action === "addCard") {
+      // Map column name to id
+      const col =
+        s.columns.find((c) =>
+          c.title
+            .toLowerCase()
+            .includes((params.column ?? "to do").toLowerCase()),
+        ) ?? s.columns[0];
+      if (col)
+        a.addCard(col.id, params.title ?? "New Task", params.description ?? "");
+    } else if (action === "moveCard") {
+      const card = s.cards.find((c) =>
+        c.title.toLowerCase().includes((params.title ?? "").toLowerCase()),
+      );
+      const col = s.columns.find((c) =>
+        c.title.toLowerCase().includes((params.column ?? "").toLowerCase()),
+      );
+      if (card && col) a.moveCard(card.id, col.id);
+    } else if (action === "deleteCard") {
+      const card = s.cards.find((c) =>
+        c.title.toLowerCase().includes((params.title ?? "").toLowerCase()),
+      );
+      if (card) a.deleteCard(card.id);
+    } else if (action === "executeTask") {
+      const card = s.cards.find((c) =>
+        c.title.toLowerCase().includes((params.title ?? "").toLowerCase()),
+      );
+      const inProgress = s.columns.find((c) =>
+        c.title.toLowerCase().includes("progress"),
+      );
+      if (card && inProgress) {
+        a.moveCard(card.id, inProgress.id);
+        a.updateCard(card.id, {
+          executionStatus: "analyzing",
+          executionLogs: ["⚡ Voice command: starting execution..."],
+        });
+      }
+    }
+
+    setRecordingState("idle");
+    setTranscript("");
+    setIntent(null);
+  }, []);
+
+  const confirmIntent = useCallback(() => {
+    if (intent) executeIntent(intent);
+  }, [intent, executeIntent]);
+
+  const dismissResult = useCallback(() => {
+    setRecordingState("idle");
+    setTranscript("");
+    setIntent(null);
+    setError(null);
+  }, []);
+
+  return {
+    isRecording: recordingState === "recording",
+    recordingState,
+    transcript,
+    intent,
+    error,
+    startRecording,
+    stopRecording,
+    confirmIntent,
+    dismissResult,
+  };
 }

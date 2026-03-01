@@ -3,8 +3,11 @@ import { join } from "path";
 
 export type ExecutionStatus =
   | "idle"
-  | "thinking"
+  | "analyzing"
+  | "clarifying"
+  | "planning"
   | "working"
+  | "testing"
   | "error"
   | "done";
 

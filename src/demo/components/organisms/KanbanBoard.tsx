@@ -17,17 +17,22 @@ import type {
 } from "@/demo/hooks/useKanban";
 import { KanbanColumn } from "./KanbanColumn";
 import { CardChip } from "@/demo/components/atoms/CardChip";
+import { LLMStatusIndicator } from "@/demo/components/atoms/LLMStatusIndicator";
+import { ProjectLinker } from "./ProjectLinker";
+import type { CodebaseIndexState } from "@/demo/hooks/useCodebaseIndex";
 
 interface KanbanBoardProps {
   state: KanbanState;
   actions: KanbanActions;
   highlightedCardId: string | null;
+  index: CodebaseIndexState;
 }
 
 export function KanbanBoard({
   state,
   actions,
   highlightedCardId,
+  index,
 }: KanbanBoardProps) {
   const [activeCard, setActiveCard] = useState<Card | null>(null);
   const [addingColumn, setAddingColumn] = useState(false);
@@ -89,7 +94,9 @@ export function KanbanBoard({
             <p className="text-[10px] font-medium uppercase tracking-widest text-indigo-400/80">Developer Workspace</p>
           </div>
         </div>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4">
+          <ProjectLinker index={index} />
+          <LLMStatusIndicator />
           <div className="flex flex-col items-end">
             <span className="text-sm font-semibold text-white/80">{state.cards.length} Tasks</span>
             <span className="text-[10px] text-white/30 truncate max-w-[150px]">{state.columns.length} Active Workstreams</span>
@@ -165,9 +172,4 @@ export function KanbanBoard({
               </svg>
             </div>
             New Workstream
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
+          <
